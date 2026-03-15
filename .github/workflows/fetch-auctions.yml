@@ -1,0 +1,39 @@
+name: Fetch Collectible Auctions
+
+on:
+  schedule:
+    # Run daily at 06:00 UTC (1am EST / 10pm PST)
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Fetch auction data
+        env:
+          TORN_API_KEY: ZyyuZEnBRXYnLRKL
+        run: python fetch_collectibles.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --staged --quiet; then
+            echo "No new data to commit"
+          else
+            git commit -m "data: daily collectible auction update $(date -u +%Y-%m-%d)"
+            git push
+          fi
